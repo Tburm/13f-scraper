@@ -18,6 +18,7 @@ docker run -d \
   --restart unless-stopped \
   -e POLL_SECONDS="${POLL_SECONDS:-300}" \
   -e DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:?DISCORD_WEBHOOK_URL is required}" \
+  -e DISCORD_MENTION="${DISCORD_MENTION:-}" \
   -e SEC_USER_AGENT="${SEC_USER_AGENT:-salp-13f-monitor/0.1 contact@example.com}" \
   -e LOG_LEVEL="${LOG_LEVEL:-INFO}" \
   -v salp-13f-state:/app/state \

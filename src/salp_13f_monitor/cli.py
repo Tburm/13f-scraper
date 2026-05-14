@@ -279,7 +279,21 @@ def format_change(change: HoldingChange) -> str:
     )
 
 
-def build_discord_payload(filing: Filing, baseline_url: str, changes: list[HoldingChange], old_count: int, new_count: int) -> dict[str, Any]:
+def allowed_mentions_for(mention: str | None) -> dict[str, Any]:
+    if not mention:
+        return {"parse": []}
+    if mention in {"@here", "@everyone"}:
+        return {"parse": ["everyone"]}
+    if mention.startswith("<@") and mention.endswith(">"):
+        user_id = mention.removeprefix("<@").removeprefix("!").removesuffix(">")
+        return {"parse": [], "users": [user_id]}
+    if mention.startswith("<@&") and mention.endswith(">"):
+        role_id = mention.removeprefix("<@&").removesuffix(">")
+        return {"parse": [], "roles": [role_id]}
+    return {"parse": []}
+
+
+def build_discord_payload(filing: Filing, baseline_url: str, changes: list[HoldingChange], old_count: int, new_count: int, mention: str | None = None) -> dict[str, Any]:
     top = changes[:8]
     summary_counts: dict[str, int] = {}
     for change in changes:
@@ -306,8 +320,10 @@ def build_discord_payload(filing: Filing, baseline_url: str, changes: list[Holdi
         fields.append({"name": "Trade-style signals (heuristic, not financial advice)", "value": ", ".join(f"`{c.signal}`" for c in top)[:1024], "inline": False})
     else:
         fields.append({"name": "Diff", "value": "No differences found versus baseline.", "inline": False})
+    content_prefix = f"{mention} " if mention else ""
     return {
-        "content": f"13F update detected: {filing.accession}",
+        "content": f"{content_prefix}13F update detected: {filing.accession}",
+        "allowed_mentions": allowed_mentions_for(mention),
         "embeds": [
             {
                 "title": "Situational Awareness LP 13F update",
@@ -347,7 +363,7 @@ def build_current_payload(client: SecClient, args: argparse.Namespace, latest: F
     baseline_holdings = parse_13f_xml(baseline_xml)
     latest_holdings = parse_13f_xml(latest_xml)
     changes = diff_holdings(baseline_holdings, latest_holdings)
-    payload = build_discord_payload(latest, args.baseline_url, changes, len(baseline_holdings), len(latest_holdings))
+    payload = build_discord_payload(latest, args.baseline_url, changes, len(baseline_holdings), len(latest_holdings), args.discord_mention)
     return payload, len(changes)
 
 
@@ -406,6 +422,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--state-path", type=Path, default=Path(os.getenv("STATE_PATH", str(DEFAULT_STATE_PATH))))
     parser.add_argument("--baseline-url", default=os.getenv("BASELINE_13F_URL", DEFAULT_BASELINE_URL))
     parser.add_argument("--discord-webhook-url", default=os.getenv("DISCORD_WEBHOOK_URL"))
+    parser.add_argument("--discord-mention", default=os.getenv("DISCORD_MENTION"), help="Optional mention prefix, e.g. @here, @everyone, <@user_id>, or <@&role_id>.")
     parser.add_argument("--sec-user-agent", default=os.getenv("SEC_USER_AGENT", "salp-13f-monitor/0.1 contact@example.com"))
     parser.add_argument("--log-level", default=os.getenv("LOG_LEVEL", "INFO"))
     return parser.parse_args(argv)

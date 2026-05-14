@@ -22,6 +22,7 @@ Environment variables:
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `DISCORD_WEBHOOK_URL` | unset | Required Discord channel webhook URL; keep this in `.env`/deployment config. |
+| `DISCORD_MENTION` | unset | Optional mention prefix: `@here`, `@everyone`, `<@user_id>`, or `<@&role_id>`. |
 | `SEC_USER_AGENT` | `salp-13f-monitor/0.1 contact@example.com` | Set this to a real app/contact string for SEC fair-access compliance. |
 | `POLL_SECONDS` | `300` | Poll interval. |
 | `STATE_PATH` | `state/salp_13f_state.json` | Last seen filing state. |
@@ -34,6 +35,7 @@ Environment variables:
 uv sync
 
 export DISCORD_WEBHOOK_URL='your-channel-webhook-url'
+export DISCORD_MENTION='@here'
 export SEC_USER_AGENT='salp-13f-monitor your-email@example.com'
 uv run salp-13f-monitor
 ```
@@ -69,7 +71,7 @@ docker run --rm \
 
 ## Notes on Discord delivery
 
-Discord delivery is webhook-only. Set `DISCORD_WEBHOOK_URL` in `.env` or deployment config.
+Discord delivery is webhook-only. Set `DISCORD_WEBHOOK_URL` in `.env` or deployment config. To force a notification, set `DISCORD_MENTION=@here`, `@everyone`, or a direct Discord user mention like `<@123456789>`.
 
 The repo does not include the webhook URL. Add it in your deployment environment.
 

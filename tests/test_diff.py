@@ -68,5 +68,20 @@ def test_discord_payload_contains_embed():
     changes = diff_holdings(parse_13f_xml(OLD_XML), parse_13f_xml(NEW_XML))
     payload = build_discord_payload(filing, "https://baseline.example", changes, 2, 2)
     assert payload["content"].startswith("13F update detected")
+    assert payload["allowed_mentions"] == {"parse": []}
     assert payload["embeds"][0]["fields"]
     assert "Trade-style signals" in payload["embeds"][0]["fields"][-1]["name"]
+
+
+def test_discord_payload_allows_here_mention():
+    filing = Filing(
+        accession="0002045724-26-000002",
+        filing_date="2026-02-11",
+        report_date="2025-12-31",
+        primary_document="primary_doc.xml",
+        info_table_url="https://example.com/info.xml",
+        index_url="https://example.com/index.json",
+    )
+    payload = build_discord_payload(filing, "https://baseline.example", [], 0, 0, "@here")
+    assert payload["content"].startswith("@here 13F update detected")
+    assert payload["allowed_mentions"] == {"parse": ["everyone"]}
