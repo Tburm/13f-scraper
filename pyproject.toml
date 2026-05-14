@@ -1,0 +1,20 @@
+[project]
+name = "salp-13f-monitor"
+version = "0.1.0"
+description = "Poll SEC submissions for Situational Awareness LP 13F filings, diff holdings, and alert Discord."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.32.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+salp-13f-monitor = "salp_13f_monitor.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
