@@ -322,20 +322,10 @@ def build_discord_payload(filing: Filing, baseline_url: str, changes: list[Holdi
     }
 
 
-def send_discord(payload: dict[str, Any], webhook_url: str | None, bot_token: str | None, channel_id: str) -> None:
-    if webhook_url:
-        response = requests.post(webhook_url, json=payload, timeout=30)
-    elif bot_token:
-        if not channel_id:
-            raise RuntimeError("Set DISCORD_CHANNEL_ID when using DISCORD_BOT_TOKEN")
-        response = requests.post(
-            f"https://discord.com/api/v10/channels/{channel_id}/messages",
-            headers={"Authorization": f"Bot {bot_token}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=30,
-        )
-    else:
-        raise RuntimeError("Set DISCORD_WEBHOOK_URL or DISCORD_BOT_TOKEN to send alerts")
+def send_discord(payload: dict[str, Any], webhook_url: str | None) -> None:
+    if not webhook_url:
+        raise RuntimeError("Set DISCORD_WEBHOOK_URL to send alerts")
+    response = requests.post(webhook_url, json=payload, timeout=30)
     if response.status_code not in (200, 204):
         raise RuntimeError(f"Discord alert failed: HTTP {response.status_code}: {response.text}")
 
@@ -375,7 +365,7 @@ def run_once(args: argparse.Namespace) -> bool:
         if args.dry_run:
             print(json.dumps(payload, indent=2))
         else:
-            send_discord(payload, args.discord_webhook_url, args.discord_bot_token, args.discord_channel_id)
+            send_discord(payload, args.discord_webhook_url)
         LOG.info("Sent test alert for %s with %d changes", latest.accession, change_count)
         return True
 
@@ -388,7 +378,7 @@ def run_once(args: argparse.Namespace) -> bool:
         if args.dry_run:
             print(json.dumps(payload, indent=2))
         else:
-            send_discord(payload, args.discord_webhook_url, args.discord_bot_token, args.discord_channel_id)
+            send_discord(payload, args.discord_webhook_url)
         LOG.info("Alerted on %s with %d changes", latest.accession, change_count)
     elif args.dry_run:
         print(json.dumps({"latest": asdict(latest), "last_seen": last_seen, "would_alert": should_alert}, indent=2))
@@ -415,9 +405,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--alert-on-first-run", action="store_true", default=os.getenv("ALERT_ON_FIRST_RUN", "false").lower() == "true")
     parser.add_argument("--state-path", type=Path, default=Path(os.getenv("STATE_PATH", str(DEFAULT_STATE_PATH))))
     parser.add_argument("--baseline-url", default=os.getenv("BASELINE_13F_URL", DEFAULT_BASELINE_URL))
-    parser.add_argument("--discord-channel-id", default=os.getenv("DISCORD_CHANNEL_ID"))
     parser.add_argument("--discord-webhook-url", default=os.getenv("DISCORD_WEBHOOK_URL"))
-    parser.add_argument("--discord-bot-token", default=os.getenv("DISCORD_BOT_TOKEN"))
     parser.add_argument("--sec-user-agent", default=os.getenv("SEC_USER_AGENT", "salp-13f-monitor/0.1 contact@example.com"))
     parser.add_argument("--log-level", default=os.getenv("LOG_LEVEL", "INFO"))
     return parser.parse_args(argv)

@@ -6,9 +6,7 @@ services:
     restart: unless-stopped
     environment:
       POLL_SECONDS: ${POLL_SECONDS:-300}
-      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-}
-      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
-      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:?DISCORD_WEBHOOK_URL is required}
       SEC_USER_AGENT: ${SEC_USER_AGENT:-salp-13f-monitor/0.1 contact@example.com}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:

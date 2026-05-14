@@ -17,9 +17,7 @@ docker run -d \
   --name salp-13f-monitor \
   --restart unless-stopped \
   -e POLL_SECONDS="${POLL_SECONDS:-300}" \
-  -e DISCORD_CHANNEL_ID="${DISCORD_CHANNEL_ID:-}" \
-  -e DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN:-}" \
-  -e DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-}" \
+  -e DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:?DISCORD_WEBHOOK_URL is required}" \
   -e SEC_USER_AGENT="${SEC_USER_AGENT:-salp-13f-monitor/0.1 contact@example.com}" \
   -e LOG_LEVEL="${LOG_LEVEL:-INFO}" \
   -v salp-13f-state:/app/state \
