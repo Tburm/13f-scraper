@@ -2,7 +2,7 @@
 
 Polls the SEC submissions feed for **Situational Awareness LP** (`CIK0002045724`), detects new `13F-HR` filings, finds the filing's actual information-table XML, diffs it against the fixed baseline 13F supplied in the request, and sends a rich Discord alert.
 
-Default alert destination is Discord channel ID `1504534618181865512` when using a bot token.
+Discord channel IDs and tokens are deployment configuration, not source-code defaults. Put them in `.env` or your host/container environment.
 
 ## What it does
 
@@ -21,7 +21,7 @@ Environment variables:
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `DISCORD_CHANNEL_ID` | `1504534618181865512` | Used with `DISCORD_BOT_TOKEN`. |
+| `DISCORD_CHANNEL_ID` | unset | Required only with `DISCORD_BOT_TOKEN`; keep this in `.env`/deployment config. |
 | `DISCORD_BOT_TOKEN` | unset | Bot token with permission to post in the alert channel. |
 | `DISCORD_WEBHOOK_URL` | unset | Alternative to bot token; if set, webhook is used first. |
 | `SEC_USER_AGENT` | `salp-13f-monitor/0.1 contact@example.com` | Set this to a real app/contact string for SEC fair-access compliance. |
@@ -30,22 +30,33 @@ Environment variables:
 | `BASELINE_13F_URL` | fixed URL above | Baseline filing to compare against. |
 | `ALERT_ON_FIRST_RUN` | `false` | If false, first run seeds state without alerting. |
 
-## Install and run locally
+## Install and run locally with uv
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -e .
+uv sync
 
+export DISCORD_CHANNEL_ID='target-channel-id'
 export DISCORD_BOT_TOKEN='your-bot-token'
 export SEC_USER_AGENT='salp-13f-monitor your-email@example.com'
-salp-13f-monitor
+uv run salp-13f-monitor
+```
+
+Send a synthetic test alert for the current latest filing:
+
+```bash
+uv run salp-13f-monitor --once --test-alert
+```
+
+Preview that same test alert without sending:
+
+```bash
+uv run salp-13f-monitor --once --test-alert --dry-run
 ```
 
 Run once and print the payload/status without sending:
 
 ```bash
-salp-13f-monitor --once --dry-run --alert-on-first-run --state-path /tmp/salp-state.json
+uv run salp-13f-monitor --once --dry-run --alert-on-first-run --state-path /tmp/salp-state.json
 ```
 
 ## Docker
@@ -64,13 +75,13 @@ docker run --rm \
 Use either:
 
 1. `DISCORD_WEBHOOK_URL` for a channel webhook, or
-2. `DISCORD_BOT_TOKEN` plus `DISCORD_CHANNEL_ID=1504534618181865512`.
+2. `DISCORD_BOT_TOKEN` plus `DISCORD_CHANNEL_ID` in `.env` or deployment config.
 
 The repo does not include secrets. Add the bot token/webhook in your deployment environment.
 
 ## Tests
 
 ```bash
-pip install -e '.[dev]'
-pytest
+uv sync --extra dev
+uv run pytest
 ```

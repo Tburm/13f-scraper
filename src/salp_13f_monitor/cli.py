@@ -326,6 +326,8 @@ def send_discord(payload: dict[str, Any], webhook_url: str | None, bot_token: st
     if webhook_url:
         response = requests.post(webhook_url, json=payload, timeout=30)
     elif bot_token:
+        if not channel_id:
+            raise RuntimeError("Set DISCORD_CHANNEL_ID when using DISCORD_BOT_TOKEN")
         response = requests.post(
             f"https://discord.com/api/v10/channels/{channel_id}/messages",
             headers={"Authorization": f"Bot {bot_token}", "Content-Type": "application/json"},
@@ -349,28 +351,45 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
     path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
 
 
+def build_current_payload(client: SecClient, args: argparse.Namespace, latest: Filing) -> tuple[dict[str, Any], int]:
+    baseline_xml = client.get_text(args.baseline_url)
+    latest_xml = client.get_text(latest.info_table_url)
+    baseline_holdings = parse_13f_xml(baseline_xml)
+    latest_holdings = parse_13f_xml(latest_xml)
+    changes = diff_holdings(baseline_holdings, latest_holdings)
+    payload = build_discord_payload(latest, args.baseline_url, changes, len(baseline_holdings), len(latest_holdings))
+    return payload, len(changes)
+
+
 def run_once(args: argparse.Namespace) -> bool:
     client = SecClient(user_agent=args.sec_user_agent)
     state = load_state(args.state_path)
     latest = client.latest_13f()
     LOG.info("Latest 13F: %s %s", latest.accession, latest.info_table_url)
 
+    if args.test_alert:
+        payload, change_count = build_current_payload(client, args, latest)
+        payload["content"] = f"TEST ALERT - {payload['content']}"
+        payload["embeds"][0]["title"] = f"TEST - {payload['embeds'][0]['title']}"
+        payload["embeds"][0]["color"] = 0xF1C40F
+        if args.dry_run:
+            print(json.dumps(payload, indent=2))
+        else:
+            send_discord(payload, args.discord_webhook_url, args.discord_bot_token, args.discord_channel_id)
+        LOG.info("Sent test alert for %s with %d changes", latest.accession, change_count)
+        return True
+
     last_seen = state.get("last_accession")
     is_new = latest.accession != last_seen
     should_alert = is_new and (last_seen is not None or args.alert_on_first_run)
 
     if should_alert:
-        baseline_xml = client.get_text(args.baseline_url)
-        latest_xml = client.get_text(latest.info_table_url)
-        baseline_holdings = parse_13f_xml(baseline_xml)
-        latest_holdings = parse_13f_xml(latest_xml)
-        changes = diff_holdings(baseline_holdings, latest_holdings)
-        payload = build_discord_payload(latest, args.baseline_url, changes, len(baseline_holdings), len(latest_holdings))
+        payload, change_count = build_current_payload(client, args, latest)
         if args.dry_run:
             print(json.dumps(payload, indent=2))
         else:
             send_discord(payload, args.discord_webhook_url, args.discord_bot_token, args.discord_channel_id)
-        LOG.info("Alerted on %s with %d changes", latest.accession, len(changes))
+        LOG.info("Alerted on %s with %d changes", latest.accession, change_count)
     elif args.dry_run:
         print(json.dumps({"latest": asdict(latest), "last_seen": last_seen, "would_alert": should_alert}, indent=2))
 
@@ -392,10 +411,11 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=int, default=int(os.getenv("POLL_SECONDS", "300")))
     parser.add_argument("--once", action="store_true", help="Run a single poll and exit.")
     parser.add_argument("--dry-run", action="store_true", help="Print payload/status instead of sending Discord.")
+    parser.add_argument("--test-alert", action="store_true", help="Send a test alert for the current latest filing regardless of saved state; does not update state.")
     parser.add_argument("--alert-on-first-run", action="store_true", default=os.getenv("ALERT_ON_FIRST_RUN", "false").lower() == "true")
     parser.add_argument("--state-path", type=Path, default=Path(os.getenv("STATE_PATH", str(DEFAULT_STATE_PATH))))
     parser.add_argument("--baseline-url", default=os.getenv("BASELINE_13F_URL", DEFAULT_BASELINE_URL))
-    parser.add_argument("--discord-channel-id", default=os.getenv("DISCORD_CHANNEL_ID", "1504534618181865512"))
+    parser.add_argument("--discord-channel-id", default=os.getenv("DISCORD_CHANNEL_ID"))
     parser.add_argument("--discord-webhook-url", default=os.getenv("DISCORD_WEBHOOK_URL"))
     parser.add_argument("--discord-bot-token", default=os.getenv("DISCORD_BOT_TOKEN"))
     parser.add_argument("--sec-user-agent", default=os.getenv("SEC_USER_AGENT", "salp-13f-monitor/0.1 contact@example.com"))

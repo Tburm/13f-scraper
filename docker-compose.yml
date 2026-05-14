@@ -1,0 +1,18 @@
+services:
+  salp-13f-monitor:
+    image: salp-13f-monitor:latest
+    build: .
+    container_name: salp-13f-monitor
+    restart: unless-stopped
+    environment:
+      POLL_SECONDS: ${POLL_SECONDS:-300}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      SEC_USER_AGENT: ${SEC_USER_AGENT:-salp-13f-monitor/0.1 contact@example.com}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - salp-13f-state:/app/state
+
+volumes:
+  salp-13f-state:
