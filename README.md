@@ -71,7 +71,7 @@ docker run --rm \
 
 ## Notes on Discord delivery
 
-Discord delivery is webhook-only. Set `DISCORD_WEBHOOK_URL` in `.env` or deployment config. To force a notification, set `DISCORD_MENTION=@here`, `@everyone`, or a direct Discord user mention like `<@123456789>`.
+Discord delivery is webhook-only. Set `DISCORD_WEBHOOK_URL` in `.env` or deployment config. To force a notification, set `DISCORD_MENTION=@here`, `@everyone`, or a direct Discord user mention like `<@123456789>`. For mobile push reliability, prefer a direct user mention over `@here`.
 
 The repo does not include the webhook URL. Add it in your deployment environment.
 
