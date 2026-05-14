@@ -24,7 +24,7 @@ Environment variables:
 | `DISCORD_WEBHOOK_URL` | unset | Required Discord channel webhook URL; keep this in `.env`/deployment config. |
 | `DISCORD_MENTION` | unset | Optional mention prefix: `@here`, `@everyone`, `<@user_id>`, or `<@&role_id>`. |
 | `SEC_USER_AGENT` | `salp-13f-monitor/0.1 contact@example.com` | Set this to a real app/contact string for SEC fair-access compliance. |
-| `POLL_SECONDS` | `300` | Poll interval. |
+| `POLL_SECONDS` | `60` | Poll interval in seconds. The sandbox deployment runs once per minute. |
 | `STATE_PATH` | `state/salp_13f_state.json` | Last seen filing state. |
 | `BASELINE_13F_URL` | fixed URL above | Baseline filing to compare against. |
 | `ALERT_ON_FIRST_RUN` | `false` | If false, first run seeds state without alerting. |

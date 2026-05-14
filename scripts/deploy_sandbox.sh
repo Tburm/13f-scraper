@@ -16,7 +16,7 @@ docker volume create salp-13f-state >/dev/null
 docker run -d \
   --name salp-13f-monitor \
   --restart unless-stopped \
-  -e POLL_SECONDS="${POLL_SECONDS:-300}" \
+  -e POLL_SECONDS="${POLL_SECONDS:-60}" \
   -e DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:?DISCORD_WEBHOOK_URL is required}" \
   -e DISCORD_MENTION="${DISCORD_MENTION:-}" \
   -e SEC_USER_AGENT="${SEC_USER_AGENT:-salp-13f-monitor/0.1 contact@example.com}" \

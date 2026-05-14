@@ -414,7 +414,7 @@ def run_once(args: argparse.Namespace) -> bool:
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Poll SEC for SALP 13F updates and alert Discord.")
-    parser.add_argument("--poll-seconds", type=int, default=int(os.getenv("POLL_SECONDS", "300")))
+    parser.add_argument("--poll-seconds", type=int, default=int(os.getenv("POLL_SECONDS", "60")))
     parser.add_argument("--once", action="store_true", help="Run a single poll and exit.")
     parser.add_argument("--dry-run", action="store_true", help="Print payload/status instead of sending Discord.")
     parser.add_argument("--test-alert", action="store_true", help="Send a test alert for the current latest filing regardless of saved state; does not update state.")
